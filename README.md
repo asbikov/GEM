@@ -1,6 +1,6 @@
 # GEM
 
-A language model designed for System 2 (long) thinking.
+A language model designed for System 2 thinking.
 
 System 2 thinking requires the model to operate for extended periods, generating longer sequences while making deliberate decisions about what information to retain and what to discard from memory. Crucially, when the model produces new results, it must be able to immediately "learn" from them. GEM builds on an undercelebrated achievement in AI: how the context of language models effectively solves the challenge of few-shot learning, at least partially. GEM aims to expand on this concept by implementing a very large "fast weights" memory module where new information is immediately learned and gradually forgotten over time. This approach could eventually be refined to include different types of memory - shorter-term, longer-term, and permanent - by varying how quickly different weights update during the writing process.
 
