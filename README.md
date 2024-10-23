@@ -2,10 +2,6 @@
 
 A language model designed for System 2 thinking.
 
-System 2 thinking requires the model to operate for extended periods, generating longer sequences while making deliberate decisions about what information to retain and what to discard from memory. Crucially, when the model produces new results, it must be able to immediately "learn" from them. GEM builds on an undercelebrated achievement in AI: how the context of language models effectively solves the challenge of few-shot learning, at least partially. GEM aims to expand on this concept by implementing a very large "fast weights" memory module where new information is immediately learned and gradually forgotten over time. This approach could eventually be refined to include different types of memory - shorter-term, longer-term, and permanent - by varying how quickly different weights update during the writing process.
-
-A challenge in implementing such a system lies in managing resource consumption during training. Traditional autograd approaches would require storing multiple intermediate states of the memory, making it impractical for long contexts. GEM solves this through a carefully designed memory module with read and write operations. The write operation is specifically engineered to be reversible, allowing the reconstruction of intermediate states during the backward pass without storing them explicitly. This reversibility, combined with the gradual forgetting property, enables efficient training while maintaining the model's ability to learn and forget information dynamically.
-
 ## 🚀 Installation
 
 ```bash
