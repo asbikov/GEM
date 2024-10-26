@@ -38,31 +38,20 @@ class Memory_Autograd(nn.Module):
         self.V = self.V_initial_state.clone()
 
     def write(self, key, value):
-        attention = F.softmax(self.K @ key.t() / self.K.shape[1] ** 0.5, dim=0)
+        attention = F.softmax((self.K @ key.t()) / (self.K.shape[1] ** 0.5), dim=0)
         old_value = attention.t() @ self.V
-        self.V += torch.outer(attention, (value - old_value))
+        # note that we do not use an inplace operation here
+        self.V = self.V + torch.outer(attention, (value - old_value))
         return old_value
 
     def read(self, query):
-        attention = F.softmax(self.K @ query.t() / self.K.shape[1] ** 0.5, dim=0)
+        attention = F.softmax((self.K @ query.t()) / (self.K.shape[1] ** 0.5), dim=0)
         retrieved_value = attention.t() @ self.V
         return retrieved_value
 
     def forward(self, key, value, query):
-        def write(key, value):
-            attention = F.softmax((self.K @ key.t()) / (self.K.shape[1] ** 0.5), dim=0)
-            old_value = attention.t() @ self.V
-            # note that we do not use an inplace operation here
-            self.V = self.V + torch.outer(attention, (value - old_value))
-            return old_value
-
-        def read(query):
-            attention = F.softmax((self.K @ query.t()) / (self.K.shape[1] ** 0.5), dim=0)
-            retrieved_value = attention.t() @ self.V
-            return retrieved_value
-        
-        write(key, value)
-        retrieved_value = read(query)
+        self.write(key, value)
+        retrieved_value = self.read(query)
         return retrieved_value
 
 class Memory_Transformer(nn.Module):
