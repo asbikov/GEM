@@ -109,7 +109,6 @@ def main():
     GEM_CONFIG.vocabulary_size = tokenizer.vocab_size
     print("Vocabulary size: ", GEM_CONFIG.vocabulary_size)
 
-    print("Tokenizing dataset:")
     dataset = load_tokenized_dataset(TRAIN_CONFIG.dataset_name, tokenizer, GEM_CONFIG.sequence_length + 1)
 
     model = GEM(GEM_CONFIG).to(DEVICE)
