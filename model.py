@@ -17,6 +17,9 @@ class GEMConfig:
 
 
 class MLP(nn.Module):
+    """
+    """
+
     def __init__(self, embedding_size):
         super().__init__()
         self.l1 = nn.Linear(embedding_size, 4 * embedding_size)
@@ -75,7 +78,7 @@ class GEM(nn.Module):
         self.token_embeddings.weight = self.head.weight
         # this is important when using weight tying, but why?
         torch.nn.init.normal_(self.pos_embeddings.weight, mean=0.0, std=0.02)
-        
+
     def forward(self, inputs):
         batch_size, sequence_length = inputs.shape
 
