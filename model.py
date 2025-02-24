@@ -71,9 +71,11 @@ class GEM(nn.Module):
         self.norm = nn.LayerNorm(config.embedding_size, bias=False)
         self.head = nn.Linear(config.embedding_size, config.vocabulary_size, bias=False)
 
-        # TODO: weight tying for last layer
-        # self.token_embeddings.weight = self.head.weight
-
+        # weight tying for last layer
+        self.token_embeddings.weight = self.head.weight
+        # this is important when using weight tying, but why?
+        torch.nn.init.normal_(self.pos_embeddings.weight, mean=0.0, std=0.02)
+        
     def forward(self, inputs):
         batch_size, sequence_length = inputs.shape
 
