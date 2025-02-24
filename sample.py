@@ -7,7 +7,7 @@ from utils import load_checkpoint
 @dataclass
 class SampleConfig:
     prompt: str = "\n"
-    device: str = "cpu"
+    device: str = "cuda"
     checkpoint_path: str = "checkpoints/best.pth"
     tokenizer_name: str = "./character_tokenizer"
     max_tokens: int = 1024
