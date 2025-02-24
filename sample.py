@@ -24,7 +24,11 @@ print(SAMPLE_CONFIG)
 # set random seed
 torch.manual_seed(SAMPLE_CONFIG.random_seed)
 
-DEVICE = torch.device(SAMPLE_CONFIG.device)
+if SAMPLE_CONFIG.device == "cuda" and not torch.cuda.is_available():
+    print("Warning: CUDA device requested but not available. Using CPU instead.")
+    DEVICE = torch.device("cpu")
+else:
+    DEVICE = torch.device(SAMPLE_CONFIG.device)
 
 
 def top_k_top_p_filtering(logits, top_k=0, top_p=0.0, filter_value=-float('Inf')):
