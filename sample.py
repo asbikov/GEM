@@ -11,7 +11,7 @@ class SampleConfig:
     checkpoint_path: str = "checkpoints/best.pth"
     tokenizer_name: str = "./character_tokenizer"
     max_tokens: int = 1024
-    temperature: float = 0.8
+    temperature: float = 0.9
     top_k: int = 10
     top_p: float = 0.9
     random_seed: int = 1
