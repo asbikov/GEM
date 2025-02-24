@@ -51,13 +51,13 @@ class Memory_Autograd(nn.Module):
 
         d = (a_k @ self.V - v)
 
-        z = a_q @ self.V - masked_a @ d
+        r = a_q @ self.V - masked_a @ d
 
         lr = 1
         # note that we can't modify V inplace
         self.V = self.V - lr * (a_k.t() @ d)
 
-        return z
+        return r
 
 
 class Memory_Transformer(nn.Module):
@@ -95,6 +95,6 @@ class Memory_Transformer(nn.Module):
         a_q = a_q.masked_fill(mask, float('-inf'))
         a_q = F.softmax(a_q, dim=-1)
 
-        z = a_q @ self.V[:new_size]
+        r = a_q @ self.V[:new_size]
 
-        return z
+        return r

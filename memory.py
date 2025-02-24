@@ -57,7 +57,7 @@ class Memory(nn.Module):
             v: (b, dim_V)
 
         Returns:
-            z: (b, dim_V)
+            r: (b, dim_V)
         """
         with torch.autograd.graph.saved_tensors_hooks(self.pack_hook, self.unpack_hook):
             a_k = F.softmax(k @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
@@ -69,7 +69,7 @@ class Memory(nn.Module):
 
             d = (a_k @ self.V - v)
 
-            z = a_q @ self.V - masked_a @ d
+            r = a_q @ self.V - masked_a @ d
 
             lr = 1
             self.V -= lr * (a_k.t() @ d)
@@ -82,6 +82,6 @@ class Memory(nn.Module):
                     a_k = F.softmax(k @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
                     self.V += a_k.t() @ d
 
-            z.register_hook(backward_hook)
+            r.register_hook(backward_hook)
 
-        return z
+        return r
