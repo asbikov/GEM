@@ -47,7 +47,11 @@ print(GEM_CONFIG)
 # set random seed
 torch.manual_seed(TRAIN_CONFIG.random_seed)
 
-DEVICE = torch.device(TRAIN_CONFIG.device if torch.cuda.is_available() else "cpu")
+if TRAIN_CONFIG.device == "cuda" and not torch.cuda.is_available():
+    print("Warning: CUDA device requested but not available. Using CPU instead.")
+    DEVICE = torch.device("cpu")
+else:
+    DEVICE = torch.device(TRAIN_CONFIG.device)
 
 
 def load_tokenized_dataset(dataset_name, tokenizer, max_length):
