@@ -8,7 +8,7 @@ class Memory(nn.Module):
     A differentiable memory module.
     The memory consists of a keys matrix (K) and a values matrix (V) which can be updated.
     Normal autograd would consume a lot of memory to keep the intermediate memory states.
-    Instead, we reproduce thе intermediate states step by step in the backward pass. 
+    Instead, we reproduce the intermediate states step by step in the backward pass. 
     """
 
     def __init__(self, memory_size, dim_K, dim_V):
