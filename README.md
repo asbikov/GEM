@@ -1,8 +1,16 @@
 # GEM
 
-A language model designed for System 2 thinking.
+Exploring ideas for making an efficient language model with large memory.
 
-## 🚀 Installation
+
+## 📋 ToDo
+
+- [*] [TTT layers](https://arxiv.org/pdf/2407.04620) for large trainable memory
+- [ ] Mixture of Experts (MoE) for efficient scaling
+- [ ] README - references.
+
+
+## 🛠 Setup
 
 ```bash
 git clone https://github.com/asbikov/GEM.git
@@ -14,75 +22,66 @@ pip install -r requirements.txt
 
 Let's compare a small GEM model with a similarly sized transformer to make sure our implementation is actually working.
 
-Check out Andrej Karpathy's awesome [nanoGPT](https://github.com/karpathy/nanoGPT)! We can run a similar test where a character-level GEM model with just under 1M parameters is trained on the works of Shakespeare. It achieves a validation loss of 1.8557, which is on par with the vanilla transformer.
+Check out Andrej Karpathy's awesome [nanoGPT](https://github.com/karpathy/nanoGPT)! We can run a similar test where a character-level GEM model with just under 1M parameters is trained on the works of Shakespeare. It achieves a validation loss of 1.8057, which is on par with the vanilla transformer.
 
 ```bash
 python train.py
 ```
 
 ```
-TrainConfig(device='cpu', dataset_name='karpathy/tiny_shakespeare', tokenizer_name='character', epochs=2, batch_size=1, gradient_accumulation_steps=12, learning_rate=0.001, checkpoints_dir='checkpoints', continue_from_checkpoint='')
-GEMConfig(embedding_size=128, memory_size=64, vocabulary_size=None, sequence_length=64, n_layers=4)
-Fitting tokenizer: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 62.52it/s]
-Vocabulary size: 65
-Total parameters: 882560
+TrainConfig(device='cuda', dataset_name='karpathy/tiny_shakespeare', tokenizer_name='./character_tokenizer', epochs=2, batch_size=1, gradient_accumulation_steps=12, learning_rate=0.001, checkpoints_dir='checkpoints', random_seed=1)
+GEMConfig(vocabulary_size=None, sequence_length=64, minibatch_size=16, memory_size=64, embedding_size=128, n_layers=4)
+Fitting tokenizer: 100%|█████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 58.73it/s]
+Vocabulary size:  65
+Total parameters: 874240
 Epoch 1/2
-Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 15685/15685 [3:38:46<00:00,  1.19it/s, moving_loss=1.9557] 
-Validating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████| 871/871 [02:19<00:00,  6.26it/s, moving_loss=1.9794]
-Train Loss: 2.2394, Val Loss: 2.0330
+Training: 100%|██████████████████████████████████████████████████████████| 15443/15443 [21:45<00:00, 11.83it/s, moving_loss=2.0223]
+Validating: 100%|████████████████████████████████████████████████████████████| 857/857 [00:16<00:00, 50.78it/s, moving_loss=2.0722]
+Train Loss: 2.2843, Val Loss: 2.1059
 Epoch 2/2
-Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 15685/15685 [3:21:38<00:00,  1.30it/s, moving_loss=1.7402]
-Validating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████| 871/871 [02:07<00:00,  6.85it/s, moving_loss=1.7923]
-Train Loss: 1.8289, Val Loss: 1.8557
+Training: 100%|██████████████████████████████████████████████████████████| 15443/15443 [21:38<00:00, 11.89it/s, moving_loss=1.7106]
+Validating: 100%|████████████████████████████████████████████████████████████| 857/857 [00:16<00:00, 50.50it/s, moving_loss=1.7590]
+Train Loss: 1.8338, Val Loss: 1.8057
 ```
 
-## 📚 Text Generation
+## 🚀 Generating Text
 
-Generate text by sampling the trained model:
+Generate text by sampling from the trained model::
 
 ```bash
 python sample.py
 ```
 
 ```
-That of begricious with here well, by me straing to as borning soon.
-To dead asting wead better be those with them,
-And and beeave the the balinds begain sould beasoure the been farrem.
+SampleConfig(prompt='\n', device='cuda', checkpoint_path='checkpoints/best.pth', tokenizer_name='./character_tokenizer', max_tokens=1024, temperature=0.9, top_k=10, top_p=0.9, random_seed=1)
+Fitting tokenizer: 100%|█████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 55.41it/s]
 
-LEONTES:
-We would muselfs soull ast and all them with borned.
 
-First, and maind somer to thank my trother with a the some the fame since,
-There bidstating susiness wead the weadon bard becoume must thou ting,
-Then done
-That stinerve with the calials, too did the gaies stried and stoon.
+KING RICHARD II:
+Marrchery bothings with hath do onclied have serving and thou will
+Than beservion in old be of therefore, sting me which tongue and out of my mighty
+Marcius one inceas and that almst we father,
+To my life, but there armself, be be his beaster to do more
+That the spirt merdent: we and make out of your for to comprait way
+So with is thee thance to dosess we with thank the swarding,
+And be a liftter that of welcond be that speak,
+Wheret wan the marder to seal.
 
-Fiven me swould is firends and are to steem.
+MENENE:
+If, that the thath sead it my go say
+Time, swears with will to the devil mannishere:
+I marke mistren so thence alme a bruing seak:
+Some, then my shold, my the revices here fairend sto the shalless:
+Wear hastity the bessicelf with herdrait meeth: bray.
 
-LEONTES:
-How madiom.
-
-BENVOLIO:
-Hast me marrcious on with bover thou backing somme all somme of deem
-To mucke signingmenty attalt berove,
-Than my despeak, the shalt is the came and with withn son.
-
-PETILIDIUS:
-Is beadous, lies, more offest of them subatie and the prestage,
-To mostated the mown'd on for the be busing beread the the sir;
-And is not them be weaken sthorer, stho sting and my becove.
-
-And she have not were best the take botter, and stake them that herefore
-Fore the badistalt my becomer,
+LADY CAPULET:
+And that my lord many shall mettenly and with true;
+With art in that my my gay
+To that shomand a comprine thin to beseech'd anger him;
+There with ather's more to my honoura my harged to make barried:
+And besirely and our and be me his honourable.
+That my that a the re
 ```
 
 Drunk Shakespeare. 
 
-## 📋 ToDo
-
-- [ ] Find why weight tying of the last layer is not working. It may reveal a bug.
-- [ ] Some kind of paralelization is necessary.
-- [ ] Scaling up - MoE approach.
-- [ ] README - model architecture.
-- [ ] README - math.
-- [ ] README - references.
