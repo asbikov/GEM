@@ -11,14 +11,14 @@ from tqdm import tqdm
 from model import GEM, GEMConfig
 from utils import save_checkpoint
 
-# # swap Memory implementation for debug
+# # swap Memory implementation to debug
 # from memory import Memory
 # from memory_debug import swap_class_implementation, Memory_Autograd, Memory_Transformer
 # swap_class_implementation(Memory, Memory_Autograd)
 
 @dataclass
 class TrainConfig:
-    device: str = "cpu"
+    device: str = "cuda"
     dataset_name: str = "karpathy/tiny_shakespeare"
     tokenizer_name: str = "./character_tokenizer"
     epochs: int = 2
@@ -33,8 +33,9 @@ TRAIN_CONFIG = TrainConfig()
 GEM_CONFIG = GEMConfig(
     vocabulary_size = None,
     sequence_length = 64,
-    embedding_size = 128,
+    minibatch_size = 16,
     memory_size = 64,
+    embedding_size = 128,
     n_layers = 4
 )
 
@@ -53,7 +54,7 @@ def load_tokenized_dataset(dataset_name, tokenizer, max_length):
         tokenized = [tokenizer.encode(text) for text in examples["text"]]
         chunks = []
         for ids in tokenized:
-            chunks.extend([ids[i:i + max_length] for i in range(0, len(ids) - max_length + 1, max_length)])
+            chunks.extend([ids[i:i + max_length] for i in range(0, len(ids) - max_length, max_length)])
         return {"input_ids": chunks}
 
     tokenized_dataset = dataset.map(tokenize_and_chunk, batched=True, remove_columns=["text"])
@@ -104,7 +105,7 @@ def main():
     print("Vocabulary size: ", GEM_CONFIG.vocabulary_size)
 
     print("Tokenizing dataset:")
-    dataset = load_tokenized_dataset(TRAIN_CONFIG.dataset_name, tokenizer, GEM_CONFIG.sequence_length)
+    dataset = load_tokenized_dataset(TRAIN_CONFIG.dataset_name, tokenizer, GEM_CONFIG.sequence_length + 1)
 
     model = GEM(GEM_CONFIG).to(DEVICE)
 
@@ -116,7 +117,7 @@ def main():
 
     optimizer = AdamW(model.parameters(), lr=TRAIN_CONFIG.learning_rate, betas=(0.9, 0.99))
     scheduler_steps = len(dataset) * TRAIN_CONFIG.epochs / (TRAIN_CONFIG.batch_size * TRAIN_CONFIG.gradient_accumulation_steps)
-    min_learning_rate = TRAIN_CONFIG.learning_rate*0.
+    min_learning_rate = TRAIN_CONFIG.learning_rate*0.01
     scheduler = CosineAnnealingLR(optimizer, T_max=scheduler_steps, eta_min=min_learning_rate)
 
     start_epoch = 0

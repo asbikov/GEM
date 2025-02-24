@@ -7,10 +7,11 @@ from memory import Memory
 class GEMConfig:
     """
     """
-    embedding_size: int
-    memory_size: int
     vocabulary_size: int
     sequence_length: int
+    minibatch_size: int
+    memory_size: int
+    embedding_size: int
     n_layers: int
 
 class MLP(nn.Module):
@@ -64,35 +65,39 @@ class GEM(nn.Module):
         self.norm = nn.LayerNorm(config.embedding_size, bias=False)
         self.head = nn.Linear(config.embedding_size, config.vocabulary_size, bias=False)
         
-        # TODO: why does weight tying not work?
-        # weight tying for last layer
+        # TODO: weight tying for last layer
         #self.token_embeddings.weight = self.head.weight
 
     def forward(self, inputs):
         batch_size, sequence_length = inputs.shape
-        
-        token_embeddings = self.token_embeddings(inputs)
-        pos_embeddings = self.pos_embeddings(torch.arange(sequence_length, device=inputs.device))
-
-        embeddings = token_embeddings + pos_embeddings
 
         if batch_size != 1:
             raise ValueError("Currently, only batch size 1 is supported.")
+
+        token_embeddings = self.token_embeddings(inputs)
+        pos_embeddings = self.pos_embeddings(torch.arange(sequence_length, device=inputs.device))
+        embeddings = token_embeddings + pos_embeddings
+
+        # Remove batch dimension since batch_size is 1
         embeddings = embeddings[0]
 
-        outputs_list = []
-
+        # Reset memory in each layer
         for layer in self.layers:
             layer.memory.reset()
 
-        for i in range(sequence_length):
-            embedding = embeddings[i, :]
+        outputs_list = []
+        minibatch_size = self.config.minibatch_size
+
+        # Process tokens in minibatches
+        for i in range(0, sequence_length, minibatch_size):
+            end = min(i + minibatch_size, sequence_length)
+            minibatch = embeddings[i:end]
 
             for layer in self.layers:
-                embedding = layer(embedding)
+                minibatch = layer(minibatch)
 
-            logits = self.head(self.norm(embedding))
+            logits = self.head(self.norm(minibatch))
             outputs_list.append(logits)
 
-        outputs = torch.stack(outputs_list).unsqueeze(0)
+        outputs = torch.cat(outputs_list, dim=0).unsqueeze(0)
         return outputs

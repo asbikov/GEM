@@ -25,65 +25,70 @@ def swap_class_implementation(original_class, new_class):
 class Memory_Autograd(nn.Module):
     """
     Uses normal autograd in the Memory class.
-    Faster training, but consumes O(N) extra memory.
+    Faster training, but consumes extra memory.
     No hooks and no inplace addition in write.
     """
-    def __init__(self, memory_size, K_dim, V_dim):
+    def __init__(self, memory_size, dim_K, dim_V):
         super().__init__()
-        self.K_initial_state = nn.Parameter(torch.randn(memory_size, K_dim))
-        self.V_initial_state = nn.Parameter(torch.randn(memory_size, V_dim))
+        self.K_initial_state = nn.Parameter(torch.randn(memory_size, dim_K))
+        self.V_initial_state = nn.Parameter(torch.randn(memory_size, dim_V))
 
     def reset(self):
         self.K = self.K_initial_state.clone()
         self.V = self.V_initial_state.clone()
 
-    def write(self, key, value):
-        attention = F.softmax((self.K @ key.t()) / (self.K.shape[1] ** 0.5), dim=0)
-        old_value = attention.t() @ self.V
-        # note that we do not use an inplace operation here
-        self.V = self.V + torch.outer(attention, (value - old_value))
-        return old_value
+    def forward(self, q, k, v):
+        a_k = F.softmax(k @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
+        a_q = F.softmax(q @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
+        
+        a = a_q @ a_k.t()
+        mask = torch.triu(torch.ones_like(a)).bool()
+        masked_a = a.masked_fill(mask, 0)
 
-    def read(self, query):
-        attention = F.softmax((self.K @ query.t()) / (self.K.shape[1] ** 0.5), dim=0)
-        retrieved_value = attention.t() @ self.V
-        return retrieved_value
+        d = (a_k @ self.V - v)
+        
+        z = a_q @ self.V - masked_a @ d
 
-    def forward(self, key, value, query):
-        self.write(key, value)
-        retrieved_value = self.read(query)
-        return retrieved_value
+        lr = 1
+        # note that we can't modify V inplace
+        self.V = self.V - lr * (a_k.t() @ d)
+
+        return z
 
 class Memory_Transformer(nn.Module):
     """
     Replicates vanilla Transformer key value cache.
     """
-    def __init__(self, memory_size, K_dim, V_dim):
+    def __init__(self, memory_size, dim_K, dim_V):
         super().__init__()
         self.memory_size = memory_size
-        self.K_dim = K_dim
-        self.V_dim = V_dim
+        self.dim_K = dim_K
+        self.dim_V = dim_V
+        self.dummy_param = nn.Parameter(torch.empty(0))
 
     def reset(self):
-        self.K = torch.empty(0, self.K_dim)
-        self.V = torch.empty(0, self.V_dim)
+        self.K = torch.zeros(self.memory_size, self.dim_K, device=self.dummy_param.device)
+        self.V = torch.zeros(self.memory_size, self.dim_V, device=self.dummy_param.device)
         self.current_size = 0
 
     def forward(self, q, k, v):
-        self.K = torch.cat([self.K, k.unsqueeze(0)], dim=0)
-        self.V = torch.cat([self.V, v.unsqueeze(0)], dim=0)
-        self.current_size += 1
+        b = q.shape[0]
+        old_size = self.current_size
+        new_size = self.current_size + b
 
-        attention_scores = torch.matmul(q.unsqueeze(0), self.K[:self.current_size].transpose(-2, -1)) / (self.K_dim ** 0.5)
+        self.K[old_size:new_size, :] = k
+        self.V[old_size:new_size, :] = v
+        self.current_size = new_size
 
-        mask = torch.ones(1, self.current_size, dtype=torch.bool, device=q.device)
-        mask[:, :self.current_size] = False
+        a_q = (q @ self.K[:new_size].t()) / (self.dim_K ** 0.5)
 
-        attention_scores = attention_scores.masked_fill(mask, float('-inf'))
+        key_indices = torch.arange(new_size, device=q.device).unsqueeze(0)
+        query_indices = torch.arange(old_size, new_size, device=q.device).unsqueeze(1)
 
-        attention_weights = F.softmax(attention_scores, dim=-1)
+        mask = key_indices > query_indices
+        a_q = a_q.masked_fill(mask, float('-inf'))
+        a_q = F.softmax(a_q, dim=-1)
 
-        output = torch.matmul(attention_weights, self.V[:self.current_size]).squeeze(0)
+        z = a_q @ self.V[:new_size]
 
-        return output
-
+        return z
