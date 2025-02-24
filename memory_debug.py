@@ -8,19 +8,22 @@ For debug purposes, we can replace the implementation of the Memory.
 At this point in time we do not plan to support multiple types of memory
 in the model, as there may be implementation specific optimizations.
 """
+
+
 def swap_class_implementation(original_class, new_class):
     """
     Replaces the class implementation in all modules that imported it
     """
     original_class_name = original_class.__name__
     debug_class_name = new_class.__name__
-    
+
     for module in sys.modules.values():
         if hasattr(module, original_class_name):
             if getattr(module, original_class_name) is original_class:
                 setattr(module, original_class_name, new_class)
-    
+
     print(f"{original_class_name} has been replaced with: {debug_class_name}")
+
 
 class Memory_Autograd(nn.Module):
     """
@@ -28,6 +31,7 @@ class Memory_Autograd(nn.Module):
     Faster training, but consumes extra memory.
     No hooks and no inplace addition in write.
     """
+
     def __init__(self, memory_size, dim_K, dim_V):
         super().__init__()
         self.K_initial_state = nn.Parameter(torch.randn(memory_size, dim_K))
@@ -40,13 +44,13 @@ class Memory_Autograd(nn.Module):
     def forward(self, q, k, v):
         a_k = F.softmax(k @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
         a_q = F.softmax(q @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
-        
+
         a = a_q @ a_k.t()
         mask = torch.triu(torch.ones_like(a)).bool()
         masked_a = a.masked_fill(mask, 0)
 
         d = (a_k @ self.V - v)
-        
+
         z = a_q @ self.V - masked_a @ d
 
         lr = 1
@@ -55,10 +59,12 @@ class Memory_Autograd(nn.Module):
 
         return z
 
+
 class Memory_Transformer(nn.Module):
     """
     Replicates vanilla Transformer key value cache.
     """
+
     def __init__(self, memory_size, dim_K, dim_V):
         super().__init__()
         self.memory_size = memory_size

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class Memory(nn.Module):
     """
     A differentiable memory module.
@@ -54,20 +55,20 @@ class Memory(nn.Module):
             q: (b, dim_K)
             k: (b, dim_K)
             v: (b, dim_V)
-        
+
         Returns:
             z: (b, dim_V)
         """
         with torch.autograd.graph.saved_tensors_hooks(self.pack_hook, self.unpack_hook):
             a_k = F.softmax(k @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
             a_q = F.softmax(q @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
-            
+
             a = a_q @ a_k.t()
             mask = torch.triu(torch.ones_like(a)).bool()
             masked_a = a.masked_fill(mask, 0)
 
             d = (a_k @ self.V - v)
-            
+
             z = a_q @ self.V - masked_a @ d
 
             lr = 1
@@ -80,8 +81,7 @@ class Memory(nn.Module):
                 with torch.no_grad():
                     a_k = F.softmax(k @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
                     self.V += a_k.t() @ d
-            
+
             z.register_hook(backward_hook)
 
         return z
-

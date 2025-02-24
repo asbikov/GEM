@@ -3,6 +3,7 @@ import torch.nn as nn
 from dataclasses import dataclass
 from memory import Memory
 
+
 @dataclass
 class GEMConfig:
     """
@@ -13,6 +14,7 @@ class GEMConfig:
     memory_size: int
     embedding_size: int
     n_layers: int
+
 
 class MLP(nn.Module):
     def __init__(self, embedding_size):
@@ -27,9 +29,11 @@ class MLP(nn.Module):
         x = self.l2(x)
         return x
 
+
 class GEMBlock(nn.Module):
     """
     """
+
     def __init__(self, config):
         super().__init__()
         self.config = config
@@ -41,7 +45,7 @@ class GEMBlock(nn.Module):
         self.MLP = MLP(config.embedding_size)
         self.norm1 = nn.LayerNorm(config.embedding_size, bias=False)
         self.norm2 = nn.LayerNorm(config.embedding_size, bias=False)
-    
+
     def forward(self, x):
         xn = self.norm1(x)
         q, k, v = self.Q(xn), self.K(xn), self.V(xn)
@@ -53,9 +57,11 @@ class GEMBlock(nn.Module):
         x = x + p
         return x
 
+
 class GEM(nn.Module):
     """
     """
+
     def __init__(self, config):
         super().__init__()
         self.config = config
@@ -64,9 +70,9 @@ class GEM(nn.Module):
         self.pos_embeddings = nn.Embedding(config.sequence_length, config.embedding_size)
         self.norm = nn.LayerNorm(config.embedding_size, bias=False)
         self.head = nn.Linear(config.embedding_size, config.vocabulary_size, bias=False)
-        
+
         # TODO: weight tying for last layer
-        #self.token_embeddings.weight = self.head.weight
+        # self.token_embeddings.weight = self.head.weight
 
     def forward(self, inputs):
         batch_size, sequence_length = inputs.shape

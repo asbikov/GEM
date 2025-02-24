@@ -2,6 +2,7 @@ import os
 import torch
 from model import GEM
 
+
 def save_checkpoint(model, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     checkpoint = {
@@ -9,6 +10,7 @@ def save_checkpoint(model, path):
         'model_config': model.config
     }
     torch.save(checkpoint, path)
+
 
 def load_checkpoint(path):
     checkpoint = torch.load(path)
