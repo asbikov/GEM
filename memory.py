@@ -80,7 +80,7 @@ class Memory(nn.Module):
                 # we are reusing k and d, shapes (b, dim_K) and (b, dim_V)
                 with torch.no_grad():
                     a_k = F.softmax(k @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
-                    self.V += a_k.t() @ d
+                    self.V += lr * a_k.t() @ d
 
             r.register_hook(backward_hook)
 
