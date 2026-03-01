@@ -14,7 +14,7 @@ from utils import save_checkpoint
 # # swap Memory implementation to debug
 # from memory import Memory
 # from memory_debug import swap_class_implementation, Memory_Autograd, Memory_Transformer
-# swap_class_implementation(Memory, Memory_Autograd)
+# swap_class_implementation(Memory, Memory_Transformer)
 
 
 @dataclass
