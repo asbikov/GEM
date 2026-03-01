@@ -13,7 +13,7 @@ def save_checkpoint(model, path):
 
 
 def load_checkpoint(path):
-    checkpoint = torch.load(path)
+    checkpoint = torch.load(path, weights_only=False)
     model = GEM(checkpoint['model_config'])
     model.load_state_dict(checkpoint['model_state_dict'])
     return model
