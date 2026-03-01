@@ -64,7 +64,7 @@ class Memory(nn.Module):
             a_q = F.softmax(q @ self.K.t() / self.K.shape[1] ** 0.5, dim=1)
 
             a = a_q @ a_k.t()
-            mask = torch.triu(torch.ones_like(a)).bool()
+            mask = torch.triu(torch.ones_like(a, dtype=bool))
             masked_a = a.masked_fill(mask, 0)
 
             d = (a_k @ self.V - v)
