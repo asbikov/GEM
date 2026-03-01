@@ -70,31 +70,31 @@ class Memory_Transformer(nn.Module):
         self.memory_size = memory_size
         self.dim_K = dim_K
         self.dim_V = dim_V
+        # used to get the device, is there a better way?
         self.dummy_param = nn.Parameter(torch.empty(0))
 
     def reset(self):
-        self.K = torch.zeros(self.memory_size, self.dim_K, device=self.dummy_param.device)
-        self.V = torch.zeros(self.memory_size, self.dim_V, device=self.dummy_param.device)
+        self.K = torch.empty(0, self.dim_K, device=self.dummy_param.device)
+        self.V = torch.empty(0, self.dim_V, device=self.dummy_param.device)
         self.current_size = 0
 
     def forward(self, q, k, v):
         b = q.shape[0]
-        old_size = self.current_size
-        new_size = self.current_size + b
 
-        self.K[old_size:new_size, :] = k
-        self.V[old_size:new_size, :] = v
-        self.current_size = new_size
+        self.K = torch.cat([self.K[:self.current_size], k], dim=0)
+        self.V = torch.cat([self.V[:self.current_size], v], dim=0)
 
-        a_q = (q @ self.K[:new_size].t()) / (self.dim_K ** 0.5)
+        a_q = q @ self.K.t() / self.dim_K ** 0.5
 
-        key_indices = torch.arange(new_size, device=q.device).unsqueeze(0)
-        query_indices = torch.arange(old_size, new_size, device=q.device).unsqueeze(1)
+        past_mask = torch.zeros(b, self.current_size, dtype=torch.bool, device=self.dummy_param.device)
+        causal_mask = torch.triu(torch.ones(b, b, dtype=torch.bool, device=self.dummy_param.device), diagonal=1)
+        mask = torch.cat([past_mask, causal_mask], dim=1)
 
-        mask = key_indices > query_indices
-        a_q = a_q.masked_fill(mask, float('-inf'))
-        a_q = F.softmax(a_q, dim=-1)
+        masked_a = a_q.masked_fill(mask, float('-inf'))
+        a = F.softmax(masked_a, dim=-1)
 
-        r = a_q @ self.V[:new_size]
+        r = a @ self.V
+
+        self.current_size += b
 
         return r
